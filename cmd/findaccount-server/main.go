@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	findaccount "github.com/blockpane/comosaccounts"
+	findaccount "github.com/johnsaigle/findaccount"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"io/fs"
 	"log"

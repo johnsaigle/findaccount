@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	findaccount "github.com/blockpane/comosaccounts"
+	findaccount "github.com/johnsaigle/findaccount"
 	"log"
 	"os"
 )
