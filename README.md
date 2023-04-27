@@ -7,7 +7,6 @@ Tool for identifying what IBC chains an account exists on. Give it an address an
 Build: 
 
 ```
-bash ./chains/fetch.sh
 go get ./...
 go build -o findaccounts cmd/findaccounts/main.go
 ```

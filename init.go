@@ -3,13 +3,15 @@ package findaccount
 import (
 	"embed"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 var (
-	//go:embed chains/*.json
+	//go:embed chain-registry/*/*.json
 	chainsFs embed.FS
 
 	//go:embed static/*
@@ -18,13 +20,30 @@ var (
 	infos = make(map[string]*ChainInfo)
 )
 
+// TODO I would like to remove the init function because I don't know if there is a good way to do error handling
+// within it. Temporary compromise is to panic but this is risky if other projects use this package.
 func init() {
 	log.SetOutput(os.Stderr)
 	log.SetFlags(log.Lshortfile)
 
-	// parse out the embedded json files for RPC endpoints
-	for k := range Prefixes {
-		f, e := chainsFs.Open("chains/" + k + "-chain.json")
+	// The chain-registry directory is a submodule to https://github.com/cosmos/chain-registry/
+	registryFiles, err := chainsFs.ReadDir("chain-registry")
+	if err != nil {
+		panic("Could not read chain-registry directory. No way to recover")
+	}
+
+	for _, entry := range registryFiles {
+		// We want directories that do not start with an underscore or period 
+		if !entry.IsDir() {
+			continue
+		} 
+		name := entry.Name()
+		// NOTE: embedFS regex pattern above might take care of this for us..
+		if strings.HasPrefix(name, "_") || strings.HasPrefix(name, ".") {
+			continue
+		}
+
+		f, e := chainsFs.Open(fmt.Sprintf("chain-registry/%s/chain.json", name))
 		if e != nil {
 			log.Println(e)
 			continue
@@ -34,7 +53,7 @@ func init() {
 			log.Println(e)
 			continue
 		}
-		_ = f.Close()
+		defer f.Close()
 		chainInfo := &ChainInfo{}
 		e = json.Unmarshal(b, chainInfo)
 		if e != nil {
@@ -42,7 +61,7 @@ func init() {
 			continue
 		}
 		if chainInfo != nil && len(chainInfo.Apis.Rpc) > 0 {
-			infos[k] = chainInfo
+			infos[name] = chainInfo
 		}
 	}
 
