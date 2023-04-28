@@ -9,6 +9,7 @@ import (
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	"regexp"
 	"strings"
+	"errors"
 )
 
 type ChainInfo struct {
@@ -53,21 +54,22 @@ func getClient(info *ChainInfo, chain string) (*rpchttp.HTTP, error) {
 			}
 		}
 		if unknown {
+			err = errors.New("Unknown protocol")
 			continue
 		}
 		client, err = rpchttp.NewWithTimeout(endpoint.Address, "/websocket", 10)
 		if err != nil {
 			continue
 		}
-		status, e := client.Status(context.Background())
-		if e != nil || status.SyncInfo.CatchingUp {
+		status, err := client.Status(context.Background())
+		if err != nil || status.SyncInfo.CatchingUp {
 			continue
 		}
 		ok = true
 		break
 	}
 	if !ok {
-		err = fmt.Errorf("could not connect to any endpoints for %s", chain)
+		err = fmt.Errorf("could not connect to any endpoints for %s: %w", chain, err)
 	}
 	return client, err
 }
@@ -114,16 +116,18 @@ func QueryAccount(info *ChainInfo, chain, account string) (hasBalance bool, bala
 	client, err := getClient(info, chain)
 
 	if err != nil {
-		return false, "", err
+		return
 	}
 	q := banktypes.QueryBalanceRequest{Address: account}
 	var query []byte
 	query, err = q.Marshal()
 	if err != nil {
+		err = fmt.Errorf("Could not marshal QueryBalanceRequest: %w", err)
 		return
 	}
 	result, err := client.ABCIQuery(context.Background(), "/cosmos.bank.v1beta1.Query/AllBalances", query)
 	if err != nil {
+		err = fmt.Errorf("Could not complete ABCIQuery: %w", err)
 		return
 	}
 
@@ -131,6 +135,7 @@ func QueryAccount(info *ChainInfo, chain, account string) (hasBalance bool, bala
 		balResp := banktypes.QueryBalanceResponse{}
 		err = balResp.Unmarshal(result.Response.Value)
 		if err != nil {
+			err = fmt.Errorf("Could not unmarshal QueryBalanceResponse: %w", err)
 			return
 		}
 		if balResp.Balance != nil {
