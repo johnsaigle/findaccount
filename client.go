@@ -15,7 +15,9 @@ type ChainInfo struct {
 	Apis struct {
 		Rpc []Rpc `json:"rpc"`
 	} `json:"apis"`
+	Bech32Prefix string `json:"bech32_prefix"`
 	Explorers []Explorer `json:"explorers"`
+	
 }
 
 type Rpc struct {
@@ -81,6 +83,7 @@ func IsValidator(info *ChainInfo, chain, account string) (validator string, err 
 		return
 	}
 	accountsMux.Lock()
+	// FIXME remove Prefixes and replace with chainInfo
 	prefix := Prefixes[chain]
 	accountsMux.Unlock()
 	addr, _ := bech32.ConvertAndEncode(prefix+"valoper", b64)

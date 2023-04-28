@@ -86,12 +86,12 @@ func ConvertToAccounts(s string) (map[string]string, error) {
 		return nil, err
 	}
 
-	for k, v := range Prefixes {
-		addr, e := bech32.ConvertAndEncode(v, b64)
+	for name, chainInfo := range infos {
+		addr, e := bech32.ConvertAndEncode(chainInfo.Bech32Prefix, b64)
 		if e != nil {
-			log.Println(k, e)
+			log.Println(name, e)
 		}
-		accounts[k] = addr
+		accounts[name] = addr
 	}
 
 	return accounts, nil
