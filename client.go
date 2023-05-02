@@ -32,6 +32,7 @@ type Explorer struct {
 var portRex = regexp.MustCompile(`.*:\d+$`)
 var protoRex = regexp.MustCompile(`^\w+://`)
 
+// TODO adding REST API support would be nice for nodes that do not have RPC enabled
 func getClient(info *ChainInfo, chain string) (*rpchttp.HTTP, error) {
 	client := &rpchttp.HTTP{}
 	var err error

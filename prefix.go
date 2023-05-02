@@ -14,6 +14,7 @@ var additional = map[string][]string{
 
 // Prefixes maps the chain name to the bech32 address prefix.
 // TODO: validate these are all correct!!!
+// TODO: delete anything that is in the chainlist. move any remaining to 'additional' for now
 var Prefixes = map[string]string{
 	"agoric":         "agoric",
 	"akash":          "akash",
