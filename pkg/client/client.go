@@ -17,7 +17,40 @@ var portRex = regexp.MustCompile(`.*:\d+$`)
 var protoRex = regexp.MustCompile(`^\w+://`)
 
 // TODO adding REST API support would be nice for nodes that do not have RPC enabled
-func getClient(info *findaccounttypes.ChainInfo, chain string) (*rpchttp.HTTP, error) {
+func NewClient(rpcaddress string) (*rpchttp.HTTP, error) {
+	client := &rpchttp.HTTP{}
+	var err error
+	rpcaddress= strings.TrimRight(rpcaddress, "/")
+	var unknown bool
+
+	if !portRex.MatchString(rpcaddress) {
+		switch protoRex.FindString(rpcaddress) {
+		case "https://":
+			rpcaddress = rpcaddress + ":443"
+		case "http://":
+			rpcaddress = rpcaddress + ":80"
+		case "tcp://":
+			rpcaddress = rpcaddress + ":26657"
+		default:
+			unknown = true
+		}
+	}
+	if unknown {
+		err = errors.New("Unknown protocol")
+		return nil, err
+	}
+	client, err = rpchttp.NewWithTimeout(rpcaddress, "/websocket", 10)
+	if err != nil {
+		return nil, err
+	}
+	status, err := client.Status(context.Background())
+	if err != nil || status.SyncInfo.CatchingUp {
+		return nil, err
+	}
+	return client, err
+}
+
+func NewClientFromChainInfo(info *findaccounttypes.ChainInfo, chain string) (*rpchttp.HTTP, error) {
 	client := &rpchttp.HTTP{}
 	var err error
 	ok := false
@@ -59,8 +92,10 @@ func getClient(info *findaccounttypes.ChainInfo, chain string) (*rpchttp.HTTP, e
 	return client, err
 }
 
+// TODO change to accept a client as parameter rather than build one. this function queries a single
+// RPC endpoint anyway; it doesn't need to build the client.
 func IsValidator(info *findaccounttypes.ChainInfo, chain, account string) (validator string, err error) {
-	client, err := getClient(info, chain)
+	client, err := NewClientFromChainInfo(info, chain)
 	if err != nil {
 		return
 	}
@@ -97,9 +132,11 @@ func IsValidator(info *findaccounttypes.ChainInfo, chain, account string) (valid
 	return
 }
 
+// TODO change to accept a client as parameter rather than build one. this function queries a single
+// RPC endpoint anyway; it doesn't need to build the client.
 func QueryAccount(info *findaccounttypes.ChainInfo, chain, account string) (hasBalance bool, balances string, err error) {
 
-	client, err := getClient(info, chain)
+	client, err := NewClientFromChainInfo(info, chain)
 
 	if err != nil {
 		return

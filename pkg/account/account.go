@@ -33,18 +33,29 @@ func (r ChainResult) ToCsv() string {
 }
 
 // SearchAccounts is the entrypoint for performing a search
-func SearchAccounts(account, rpc, prefix string) ([]ChainResult, error) {
+func SearchAccounts(account, name, rpc, prefix string) ([]ChainResult, error) {
 	// TODO : validate rpc and prefix
 	// i.e. if prefix is not alphanumeric
 	// i.e. if rpc is not well-formed (may need a URL-parsing library
 	results := make([]ChainResult, 0)
+	var addrMap map[string]string
+	var err error
 
-	// override chain-registry infos if custom rpc provided
-	if rpc != "" && prefix != "" {
-		panic("Not implemented!")
+	if name != "" && rpc != "" && prefix != "" {
+		panic("not implemented!")
+		addrMap, err = ConvertToAccountCustom(account, name, rpc, prefix)
+		if err != nil {
+			return results, err
+		}
+		// rpcclient, err := client.NewClient(rpc)
+		if err != nil {
+			return results, err
+		}
+		panic("not implemented!")
+		// TODO  Call Query account using the rpcclient
+		// bal, coins, e := client.QueryAccount(rpcs, chain, addr)
 	}
-
-	addrMap, err := ConvertToAccounts(account)
+	addrMap, err = ConvertToAccounts(account)
 	if err != nil {
 		return results, err
 	}
@@ -110,6 +121,26 @@ func ConvertToAccounts(s string) (map[string]string, error) {
 		}
 		accounts[name] = addr
 	}
+
+	return accounts, nil
+}
+
+// ConvertToAccounts using a custom RPC endpoint
+// encode into the same format even though there is on ly one entry 
+// so it can be processed using the same logic 
+func ConvertToAccountCustom(s, name, rpc, prefix string) (map[string]string, error) {
+	accounts := make(map[string]string)
+	_, b64, err := bech32.DecodeAndConvert(s)
+
+	if err != nil {
+		return nil, err
+	}
+
+	addr, e := bech32.ConvertAndEncode(prefix, b64)
+	if e != nil {
+		log.Println(name, e)
+	}
+	accounts[name] = addr
 
 	return accounts, nil
 }

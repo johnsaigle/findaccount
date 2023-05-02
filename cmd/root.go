@@ -11,6 +11,7 @@ import (
 
 var (
   address string
+  name string
   prefix string
   rpc string
 )
@@ -19,9 +20,9 @@ var rootCmd = &cobra.Command{
   Use:   "findaccount",
   Short: "Find accounts across the Cosmoverse",
   Long: `Supply a bech32 Cosmos address and discover other chains for which the same address exists.
-          The tool will also report whether the address is a validator and what tokens it has in its accounts across different chains.`,
+  The tool will also report whether the address is a validator and what tokens it has in its accounts across different chains.`,
   Run: func(cmd *cobra.Command, args []string) {
-    results, err := account.SearchAccounts(address, rpc, prefix)
+    results, err := account.SearchAccounts(address, name, rpc, prefix)
     if err != nil {
       log.Println(err)
     }
@@ -46,9 +47,11 @@ func init() {
   rootCmd.Flags().StringVarP(&address, "address", "a", "", "A bech32-encoded address")
   rootCmd.Flags().StringVarP(&rpc, "rpc", "r", "", "The fully-qualified URL for the custom RPC endpoint")
   rootCmd.Flags().StringVarP(&prefix, "prefix", "f", "", "The bech32 prefix for the chain")
+  rootCmd.Flags().StringVarP(&name, "name", "n", "", "The name of the chain")
   // TODO: also a custom block explorer?
   rootCmd.MarkFlagRequired("address")
-  
+  // TODO: name, rpc and prefix must all be declared together
+
   // rootCmd.AddCommand(searchCmd)
 }
 
