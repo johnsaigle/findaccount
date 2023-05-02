@@ -6,9 +6,13 @@ import (
 	"log"
 	"sort"
 	"sync"
+	"github.com/johnsaigle/findaccount/pkg/chaininfo"
+	"github.com/johnsaigle/findaccount/pkg/client"
 )
 
 var accountsMux sync.Mutex
+var infos = chaininfo.Infos
+
 
 type Result struct {
 	Chain      string `json:"chain"`
@@ -51,12 +55,12 @@ func SearchAccounts(account string) ([]Result, error) {
 		accountsMux.Unlock()
 
 		go func() {
-			bal, coins, e := QueryAccount(rpcs, chain, addr)
+			bal, coins, e := client.QueryAccount(rpcs, chain, addr)
 			errStr := "ok"
 			if e != nil {
 				errStr = e.Error()
 			}
-			val, _ := IsValidator(rpcs, chain, addr)
+			val, _ := client.IsValidator(rpcs, chain, addr)
 			results = append(results, Result{
 				Chain:      chain,
 				Address:    addr,

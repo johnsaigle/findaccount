@@ -1,5 +1,4 @@
 .idea
 client_test.go
-findaccounts
 *.csv
 .DS_Store

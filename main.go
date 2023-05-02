@@ -1,4 +1,4 @@
-package findaccount
+package main
 
 import (
   "github.com/johnsaigle/findaccount/cmd"

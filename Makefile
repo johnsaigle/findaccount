@@ -3,10 +3,10 @@ make:
 	build
 
 build:
-	go build -o findaccounts cmd/findaccounts/main.go
+	go build
 
 build-debug:
-	go build -gcflags="all=-N -l" -o findaccounts cmd/findaccounts/main.go
+	go build -gcflags="all=-N -l"
 
 clean:
-	rm findaccounts
+	rm findaccount

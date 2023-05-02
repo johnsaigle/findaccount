@@ -1,4 +1,4 @@
-package findaccount
+package client
 
 import (
 	"context"
@@ -10,30 +10,14 @@ import (
 	"regexp"
 	"strings"
 	"errors"
+	findaccounttypes "github.com/johnsaigle/findaccount/types"
 )
-
-type ChainInfo struct {
-	Apis struct {
-		Rpc []Rpc `json:"rpc"`
-	} `json:"apis"`
-	Bech32Prefix string `json:"bech32_prefix"`
-	Explorers []Explorer `json:"explorers"`
-	
-}
-
-type Rpc struct {
-	Address string `json:"address"`
-}
-
-type Explorer struct {
-	Url string `json:"url"`
-}
 
 var portRex = regexp.MustCompile(`.*:\d+$`)
 var protoRex = regexp.MustCompile(`^\w+://`)
 
 // TODO adding REST API support would be nice for nodes that do not have RPC enabled
-func getClient(info *ChainInfo, chain string) (*rpchttp.HTTP, error) {
+func getClient(info *findaccounttypes.ChainInfo, chain string) (*rpchttp.HTTP, error) {
 	client := &rpchttp.HTTP{}
 	var err error
 	ok := false
@@ -75,7 +59,7 @@ func getClient(info *ChainInfo, chain string) (*rpchttp.HTTP, error) {
 	return client, err
 }
 
-func IsValidator(info *ChainInfo, chain, account string) (validator string, err error) {
+func IsValidator(info *findaccounttypes.ChainInfo, chain, account string) (validator string, err error) {
 	client, err := getClient(info, chain)
 	if err != nil {
 		return
@@ -85,10 +69,11 @@ func IsValidator(info *ChainInfo, chain, account string) (validator string, err 
 	if err != nil {
 		return
 	}
-	accountsMux.Lock()
-	// FIXME remove Prefixes and replace with chainInfo
-	prefix := Prefixes[chain]
-	accountsMux.Unlock()
+	prefix := info.Bech32Prefix
+	// accountsMux.Lock()
+	// // FIXME remove Prefixes and replace with chainInfo
+	// prefix := Prefixes[chain]
+	// accountsMux.Unlock()
 	addr, _ := bech32.ConvertAndEncode(prefix+"valoper", b64)
 	valQ := staketypes.QueryValidatorRequest{ValidatorAddr: addr}
 	valQuery, err := valQ.Marshal()
@@ -112,7 +97,7 @@ func IsValidator(info *ChainInfo, chain, account string) (validator string, err 
 	return
 }
 
-func QueryAccount(info *ChainInfo, chain, account string) (hasBalance bool, balances string, err error) {
+func QueryAccount(info *findaccounttypes.ChainInfo, chain, account string) (hasBalance bool, balances string, err error) {
 
 	client, err := getClient(info, chain)
 
