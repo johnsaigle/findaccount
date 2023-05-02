@@ -8,7 +8,7 @@ Build:
 
 ```
 go get ./...
-go build -o findaccounts cmd/findaccounts/main.go
+go build
 ```
 
 ![example](example.png)
@@ -16,7 +16,7 @@ go build -o findaccounts cmd/findaccounts/main.go
 Example:
 
 ```bash
-findaccounts juno1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twfn0ja8 |grep true
+findaccounts -a juno1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twfn0ja8 |grep true
 
 cerberus,cerberus1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twrxvq0s,"",true,balance:<denom:"ucrbrus" amount:"514436665011420" > ,ok
 chihuahua,chihuahua1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twu5p8me,"",true,balance:<denom:"uhuahua" amount:"15375994400" > ,ok

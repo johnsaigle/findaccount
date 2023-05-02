@@ -6,22 +6,22 @@ import (
   "log"
 
   "github.com/spf13/cobra"
-  "github.com/spf13/viper"
   account "github.com/johnsaigle/findaccount/pkg/account"
 )
 
 var (
-  Address string
+  address string
+  prefix string
+  rpc string
 )
 
 var rootCmd = &cobra.Command{
   Use:   "findaccount",
   Short: "Find accounts across the Cosmoverse",
-  Long: `A Fast and Flexible Static Site Generator built with
-  love by spf13 and friends in Go.
-  Complete documentation is available at https://gohugo.io/documentation/`,
+  Long: `Supply a bech32 Cosmos address and discover other chains for which the same address exists.
+          The tool will also report whether the address is a validator and what tokens it has in its accounts across different chains.`,
   Run: func(cmd *cobra.Command, args []string) {
-    results, err := account.SearchAccounts(Address)
+    results, err := account.SearchAccounts(address, rpc, prefix)
     if err != nil {
       log.Println(err)
     }
@@ -35,6 +35,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+  // https://github.com/spf13/cobra/blob/main/user_guide.md
   if err := rootCmd.Execute(); err != nil {
     fmt.Fprintln(os.Stderr, err)
     os.Exit(1)
@@ -42,18 +43,20 @@ func Execute() {
 }
 
 func init() {
-  rootCmd.Flags().StringVarP(&Address, "address", "a", "", "A bech32-encoded address")
+  rootCmd.Flags().StringVarP(&address, "address", "a", "", "A bech32-encoded address")
+  rootCmd.Flags().StringVarP(&rpc, "rpc", "r", "", "The fully-qualified URL for the custom RPC endpoint")
+  rootCmd.Flags().StringVarP(&prefix, "prefix", "f", "", "The bech32 prefix for the chain")
+  // TODO: also a custom block explorer?
   rootCmd.MarkFlagRequired("address")
-  viper.BindPFlag("address", rootCmd.PersistentFlags().Lookup("address"))
-
-  rootCmd.AddCommand(searchCmd)
+  
+  // rootCmd.AddCommand(searchCmd)
 }
 
-var searchCmd = &cobra.Command{
-  Use:   "search",
-  Short: "Print the version number of Hugo",
-  Long:  `All software has versions. This is Hugo's`,
-  Run: func(cmd *cobra.Command, args []string) {
-
-  },
-}
+// var searchCmd = &cobra.Command{
+//   Use:   "search",
+//   Short: "Print the version number of Hugo",
+//   Long:  `All software has versions. This is Hugo's`,
+//   Run: func(cmd *cobra.Command, args []string) {
+//
+//   },
+// }

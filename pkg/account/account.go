@@ -2,19 +2,19 @@ package findaccount
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"log"
 	"sort"
 	"sync"
+
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/johnsaigle/findaccount/pkg/chaininfo"
 	"github.com/johnsaigle/findaccount/pkg/client"
 )
 
 var accountsMux sync.Mutex
-var infos = chaininfo.Infos
+var infos = chaininfo.Infos //populated by init code when the script gets run
 
-
-type Result struct {
+type ChainResult struct {
 	Chain      string `json:"chain"`
 	Address    string `json:"address"`
 	Validator  string `json:"is_validator"`
@@ -24,17 +24,25 @@ type Result struct {
 	Link       string `json:"link"`
 }
 
-func (r Result) CsvHeader() string {
+func (r ChainResult) CsvHeader() string {
 	return "chain,address,validator,has balance,coins,error"
 }
 
-func (r Result) ToCsv() string {
+func (r ChainResult) ToCsv() string {
 	return fmt.Sprintf("%s,%s,%q,%v,%s,%s", r.Chain, r.Address, r.Validator, r.HasBalance, r.Coins, r.Error)
 }
 
 // SearchAccounts is the entrypoint for performing a search
-func SearchAccounts(account string) ([]Result, error) {
-	results := make([]Result, 0)
+func SearchAccounts(account, rpc, prefix string) ([]ChainResult, error) {
+	// TODO : validate rpc and prefix
+	// i.e. if prefix is not alphanumeric
+	// i.e. if rpc is not well-formed (may need a URL-parsing library
+	results := make([]ChainResult, 0)
+
+	// override chain-registry infos if custom rpc provided
+	if rpc != "" && prefix != "" {
+		panic("Not implemented!")
+	}
 
 	addrMap, err := ConvertToAccounts(account)
 	if err != nil {
@@ -61,7 +69,7 @@ func SearchAccounts(account string) ([]Result, error) {
 				errStr = e.Error()
 			}
 			val, _ := client.IsValidator(rpcs, chain, addr)
-			results = append(results, Result{
+			results = append(results, ChainResult{
 				Chain:      chain,
 				Address:    addr,
 				Validator:  val,
@@ -82,6 +90,11 @@ func SearchAccounts(account string) ([]Result, error) {
 	return results, err
 }
 
+// Takes a string that should be a bech32 address. Returns error if it isn't 
+// Extracts the bytes that represent the actual address (without HRP and checksum)
+// Iterates over the ChainInfo struct to obtain all bech32 prefixes extract from the chain-registry.
+// Encode the address bytes using all bech32 prefixes
+// Returns a mapping of chain names to generated addresses
 func ConvertToAccounts(s string) (map[string]string, error) {
 	accounts := make(map[string]string)
 	_, b64, err := bech32.DecodeAndConvert(s)
