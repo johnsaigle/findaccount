@@ -4,17 +4,37 @@ Tool for identifying what IBC chains an account exists on. Give it an address an
 
 The data and RPC endpoints for chains are retrieved using the [Cosmos chain-registry](https://github.com/cosmos/chain-registry).
 
-Build: 
+## Install
+
+Clone the repository, then: 
 
 ```
-go get ./...
-go build
+make build
 ```
 
 ![example](example.png)
 
-Example:
+## Usage
 
+```bash
+findaccount -h
+Supply a bech32 Cosmos address and discover other chains for which the same address exists.
+  The tool will also report whether the address is a validator and what tokens it has in its accounts across different chains.
+
+Usage:
+  findaccount [flags]
+
+Flags:
+  -a, --address string   A bech32-encoded address
+  -h, --help             help for findaccount
+  -n, --name string      The name of the chain
+  -f, --prefix string    The bech32 prefix for the chain
+  -r, --rpc string       The fully-qualified URL for the custom RPC endpoint
+```
+
+### Example Output
+
+Find accounts across all networks known by the tool and filter for entries that exist
 ```bash
 findaccounts -a juno1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twfn0ja8 |grep true
 
@@ -32,4 +52,11 @@ likecoin,like1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twvasteq,"",true,balance:<denom:"nan
 meme,meme1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twp767a3,"",true,balance:<denom:"umeme" amount:"191311162413" > ,ok
 osmosis,osmo1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twh6levf,"",true,balance:<denom:"uosmo" amount:"119849309021" > ,ok
 stargaze,stars1aeh8gqu9wr4u8ev6edlgfq03rcy6v5twtam532,"",true,balance:<denom:"ustars" amount:"493715660" > ,ok
+```
+
+#### Custom RPC endpoints
+
+Specify a custom RPC endpoint. Helpful for examining testnets and smaller chains not in the chain-registry
+```bash
+findaccount -a sei194cqtzgc62apnvyra4lc324unnny8anmzngw8k -n sei -f sei -r 'https://rpc.atlantic-2.seinetwork.io/'  
 ```
