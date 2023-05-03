@@ -86,13 +86,15 @@ func init() {
 // Additional known nodes, not all nodes from cosmos repo are live....
 
 var additional = map[string][]string{
+	// Not in chain-registry
 	"secretnetwork": {"tcp://scrt-rpc.blockpane.com:26657"},
-	"osmosis":       {"https://osmosis-rpc.polkachu.com:443"},
 	"chihuahua":     {"https://chihuahua-rpc.mercury-nodes.net:443"},
-	"emoney":        {"https://emoney.validator.network:443"},
-	"kava":          {"https://rpc.data.kava.io:443"},
-	"stargaze":      {"https://rpc.stargaze-apis.com:443"},
-	"juno":          {"https://juno-rpc.polkachu.com:443"},
+	// Present in chain-registry
+	//"juno":          {"https://juno-rpc.polkachu.com:443"},
+	// "osmosis":       {"https://osmosis-rpc.polkachu.com:443"},
+	// "emoney":        {"https://emoney.validator.network:443"},
+	// "kava":          {"https://rpc.data.kava.io:443"},
+	// "stargaze":      {"https://rpc.stargaze-apis.com:443"},
 }
 
 // Prefixes maps the chain name to the bech32 address prefix.
