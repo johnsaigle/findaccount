@@ -2,15 +2,17 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	staketypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	"regexp"
-	"strings"
-	"errors"
+	"github.com/johnsaigle/findaccount/types"
 	findaccounttypes "github.com/johnsaigle/findaccount/types"
+	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 )
 
 var portRex = regexp.MustCompile(`.*:\d+$`)
@@ -50,12 +52,12 @@ func NewClient(rpcaddress string) (*rpchttp.HTTP, error) {
 	return client, err
 }
 
-func NewClientFromChainInfo(info *findaccounttypes.ChainInfo, chain string) (*rpchttp.HTTP, error) {
+func NewClientFromChainInfo(rpcs []types.Rpc, chain string) (*rpchttp.HTTP, error) {
 	client := &rpchttp.HTTP{}
 	var err error
 	ok := false
-	for i := range info.Apis.Rpc {
-		endpoint := info.Apis.Rpc[len(info.Apis.Rpc)-1-i]
+	for i := range rpcs {
+		endpoint := rpcs[len(rpcs)-1-i]
 		endpoint.Address = strings.TrimRight(endpoint.Address, "/")
 		var unknown bool
 
@@ -94,17 +96,16 @@ func NewClientFromChainInfo(info *findaccounttypes.ChainInfo, chain string) (*rp
 
 // TODO change to accept a client as parameter rather than build one. this function queries a single
 // RPC endpoint anyway; it doesn't need to build the client.
-func IsValidator(info *findaccounttypes.ChainInfo, chain, account string) (validator string, err error) {
-	client, err := NewClientFromChainInfo(info, chain)
-	if err != nil {
-		return
-	}
+func IsValidator(client rpchttp.HTTP, account, prefix string) (validator string, err error) {
+	// client, err := NewClientFromChainInfo(info, chain)
+	// if err != nil {
+	// 	return
+	// }
 	// Check if the account is also a validator
 	_, b64, err := bech32.DecodeAndConvert(account)
 	if err != nil {
 		return
 	}
-	prefix := info.Bech32Prefix
 	// accountsMux.Lock()
 	// // FIXME remove Prefixes and replace with chainInfo
 	// prefix := Prefixes[chain]
@@ -132,15 +133,40 @@ func IsValidator(info *findaccounttypes.ChainInfo, chain, account string) (valid
 	return
 }
 
-// TODO change to accept a client as parameter rather than build one. this function queries a single
-// RPC endpoint anyway; it doesn't need to build the client.
-func QueryAccount(info *findaccounttypes.ChainInfo, chain, account string) (hasBalance bool, balances string, err error) {
-
-	client, err := NewClientFromChainInfo(info, chain)
-
+func QueryAccountFromChainInfo(client rpchttp.HTTP, info *findaccounttypes.ChainInfo, account string) (hasBalance bool, balances string, err error) {
+	q := banktypes.QueryBalanceRequest{Address: account}
+	var query []byte
+	query, err = q.Marshal()
 	if err != nil {
+		err = fmt.Errorf("Could not marshal QueryBalanceRequest: %w", err)
 		return
 	}
+	result, err := client.ABCIQuery(context.Background(), "/cosmos.bank.v1beta1.Query/AllBalances", query)
+	if err != nil {
+		err = fmt.Errorf("Could not complete ABCIQuery: %w", err)
+		return
+	}
+
+	if len(result.Response.Value) > 0 {
+		balResp := banktypes.QueryBalanceResponse{}
+		err = balResp.Unmarshal(result.Response.Value)
+		if err != nil {
+			err = fmt.Errorf("Could not unmarshal QueryBalanceResponse: %w", err)
+			return
+		}
+		if balResp.Balance != nil {
+			balances = balResp.Balance.String()
+			hasBalance = true
+		}
+	}
+
+	return
+}
+
+// TODO change to accept a client as parameter rather than build one. this function queries a single
+// RPC endpoint anyway; it doesn't need to build the client.
+func QueryAccount(client rpchttp.HTTP, account string) (hasBalance bool, balances string, err error) {
+
 	q := banktypes.QueryBalanceRequest{Address: account}
 	var query []byte
 	query, err = q.Marshal()

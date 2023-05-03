@@ -50,7 +50,7 @@ func init() {
   rootCmd.Flags().StringVarP(&name, "name", "n", "", "The name of the chain")
   // TODO: also a custom block explorer?
   rootCmd.MarkFlagRequired("address")
-  // TODO: name, rpc and prefix must all be declared together
+  rootCmd.MarkFlagsRequiredTogether("rpc","name", "prefix")
 
   // rootCmd.AddCommand(searchCmd)
 }

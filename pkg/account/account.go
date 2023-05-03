@@ -42,18 +42,31 @@ func SearchAccounts(account, name, rpc, prefix string) ([]ChainResult, error) {
 	var err error
 
 	if name != "" && rpc != "" && prefix != "" {
-		panic("not implemented!")
 		addrMap, err = ConvertToAccountCustom(account, name, rpc, prefix)
 		if err != nil {
 			return results, err
 		}
-		// rpcclient, err := client.NewClient(rpc)
+		rpcclient, err := client.NewClient(rpc)
 		if err != nil {
 			return results, err
 		}
-		panic("not implemented!")
-		// TODO  Call Query account using the rpcclient
-		// bal, coins, e := client.QueryAccount(rpcs, chain, addr)
+		bal, coins, err:= client.QueryAccount(*rpcclient, addrMap[name])
+		val, _ := client.IsValidator(*rpcclient, addrMap[name], prefix)
+		link := "not implemented!" // TODO add this
+		var errString string
+		if err != nil {
+			errString = err.Error()
+		}
+		results = append(results, ChainResult{
+			Chain: name,
+			Address: addrMap[name],
+			Validator: val,
+			HasBalance: bal,
+			Coins: coins,
+			Error: errString,
+			Link: link,
+		})
+		return results, nil
 	}
 	addrMap, err = ConvertToAccounts(account)
 	if err != nil {
@@ -66,7 +79,8 @@ func SearchAccounts(account, name, rpc, prefix string) ([]ChainResult, error) {
 		var link string
 
 		accountsMux.Lock()
-		chain, rpcs := k, v
+		// chain, rpcs := k, v
+		chain, _ := k, v
 		addr := addrMap[k]
 		if len(infos[k].Explorers) > 0 {
 			link = infos[k].Explorers[0].Url
@@ -74,12 +88,40 @@ func SearchAccounts(account, name, rpc, prefix string) ([]ChainResult, error) {
 		accountsMux.Unlock()
 
 		go func() {
-			bal, coins, e := client.QueryAccount(rpcs, chain, addr)
 			errStr := "ok"
-			if e != nil {
-				errStr = e.Error()
+			rpcclient, err := client.NewClientFromChainInfo(infos[chain].Apis.Rpc, chain)
+			if err != nil {
+				err = fmt.Errorf("Could not build RPC client: %w", err)
+				results = append(results, ChainResult{
+					Chain:      chain,
+					Address:    addr,
+					Validator:  "N/A",
+					HasBalance: false,
+					Coins:      "N/A",
+					Error:      err.Error(),
+					Link:       link,
+				})
+				wg.Done()
+				return
 			}
-			val, _ := client.IsValidator(rpcs, chain, addr)
+			bal, coins, err := client.QueryAccount(*rpcclient, addr)
+			if err != nil {
+				results = append(results, ChainResult{
+					Chain:      chain,
+					Address:    addr,
+					Validator:  "N/A",
+					HasBalance: false,
+					Coins:      "N/A",
+					Error:      err.Error(),
+					Link:       link,
+				})
+				wg.Done()
+				return
+			}
+			val, err := client.IsValidator(*rpcclient, addr, infos[chain].Bech32Prefix)
+			if err != nil {
+				errStr = err.Error()
+			}
 			results = append(results, ChainResult{
 				Chain:      chain,
 				Address:    addr,
